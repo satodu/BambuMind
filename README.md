@@ -1,5 +1,9 @@
 # BambuMind 🐼🎋
 
+<p align="center">
+  <img src="img/bambo-mind-ico.png" alt="BambuMind Logo" width="150" />
+</p>
+
 **BambuMind** is an MCP (Model Context Protocol) server built using **NestJS** and **TypeScript** that guides users through an interactive, humanized personality test based on behavioral typologies (MBTI style).
 
 ---
