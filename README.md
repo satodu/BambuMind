@@ -1,4 +1,4 @@
-# BambuMind 🐼🎋
+# BambuMind
 
 <p align="center">
   <img src="img/bambo-mind-ico.png" alt="BambuMind Logo" width="150" />
