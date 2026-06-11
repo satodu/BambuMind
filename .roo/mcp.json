@@ -1,0 +1,10 @@
+{
+	"mcpServers": {
+		"bambumind": {
+			"command": "node",
+			"args": [
+				"/media/panda/Projects/satodu/BambuMind/dist/main.js"
+			]
+		}
+	}
+}
