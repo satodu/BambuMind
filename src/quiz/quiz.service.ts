@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { questions } from './data/questions';
 
 interface SessionState {
-  currentQuestionIndex: number;
+  answeredQuestions: number[];
   scores: Record<'E' | 'I' | 'S' | 'N' | 'T' | 'F', number>;
   language: 'pt' | 'en' | 'es';
 }
@@ -15,7 +15,7 @@ export class QuizService {
     let session = this.sessions.get(sessionId);
     if (!session) {
       session = {
-        currentQuestionIndex: 0,
+        answeredQuestions: [],
         scores: { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0 },
         language: 'pt', // Default to Portuguese
       };
@@ -40,7 +40,7 @@ export class QuizService {
     return 'pt';
   }
 
-  getNextQuestion(sessionId: string, userMessage?: string) {
+  getNextQuestion(sessionId: string, userMessage?: string, axis?: 'E_I' | 'S_N' | 'T_F') {
     const session = this.getSession(sessionId);
 
     // Detect language if a message was provided (e.g. initial greeting)
@@ -48,11 +48,29 @@ export class QuizService {
       session.language = this.detectLanguage(userMessage);
     }
 
-    if (session.currentQuestionIndex >= questions.length) {
+    // Filter out already answered questions
+    const availableQuestions = questions.filter(q => !session.answeredQuestions.includes(q.id));
+
+    if (availableQuestions.length === 0) {
       return { status: 'completed' as const };
     }
 
-    const rawQuestion = questions[session.currentQuestionIndex];
+    // Determine the raw question to present
+    let rawQuestion = availableQuestions[0]; // default fallback
+
+    if (axis) {
+      // Find a question that belongs to the requested axis
+      // We check if any option's effect targets the characters in the axis string (e.g., E or I for E_I)
+      const targetAxes = axis.split('_');
+      const matchingQuestions = availableQuestions.filter(q => 
+        q.options.some(o => targetAxes.includes(o.effect.axis))
+      );
+
+      if (matchingQuestions.length > 0) {
+        rawQuestion = matchingQuestions[0];
+      }
+    }
+
     const lang = session.language;
 
     return {
@@ -86,8 +104,18 @@ export class QuizService {
       throw new Error(`Opção ${optionId} inválida para a pergunta ${questionId}`);
     }
 
-    session.currentQuestionIndex++;
+    // Register this question as answered if not already present
+    if (!session.answeredQuestions.includes(questionId)) {
+      session.answeredQuestions.push(questionId);
+    }
+
     return this.getNextQuestion(sessionId);
+  }
+
+  addMbtiScore(sessionId: string, axis: 'E' | 'I' | 'S' | 'N' | 'T' | 'F', points: number) {
+    const session = this.getSession(sessionId);
+    session.scores[axis] = (session.scores[axis] || 0) + points;
+    return { status: 'success', scores: session.scores };
   }
 
   calculateResult(sessionId: string) {
